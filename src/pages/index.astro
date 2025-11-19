@@ -1,16 +1,36 @@
 ---
-import '../styles/global.css'
+import MainLayout from "@/layouts/MainLayout.astro";
+import { PackageOpen } from "lucide-react";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<MainLayout title="MrPack to ZIP Converter">
+  <div class="container relative mx-auto flex min-h-screen flex-col items-center justify-center px-4 py-10 md:py-20">
+    
+    <div class="text-center space-y-6 mb-12">
+      <div class="inline-flex items-center justify-center p-4 mb-4 rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 shadow-[0_0_20px_-5px_rgba(255,255,255,0.1)]">
+        <PackageOpen className="w-10 h-10" />
+      </div>
+      
+      <div class="space-y-2">
+        <h1 class="text-4xl font-extrabold tracking-tight lg:text-6xl text-foreground">
+          Modrinth Pack Converter
+        </h1>
+        <p class="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          Transform <code class="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono text-base">.mrpack</code> files into ready-to-use ZIPs. 
+          <br />
+          Free, fast, and runs entirely in your browser.
+        </p>
+      </div>
+    </div>
+
+    <div class="w-full max-w-2xl">
+       <div class="p-12 border-2 border-dashed border-muted rounded-xl bg-card/30 text-center text-muted-foreground">
+       </div>
+    </div>
+
+    <footer class="mt-auto pt-12 text-center text-sm text-muted-foreground/60">
+      <p>&copy; {new Date().getFullYear()} MrPack Converter. Built with Astro.</p>
+    </footer>
+
+  </div>
+</MainLayout>
