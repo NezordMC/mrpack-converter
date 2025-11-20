@@ -1,6 +1,7 @@
 ---
 import "@/styles/global.css";
 import ReloadPrompt from "@/components/pwa/ReloadPrompt";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 
 interface Props {
   title?: string;
@@ -31,10 +32,10 @@ const {
 
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-background font-sans antialiased text-foreground selection:bg-primary selection:text-primary-foreground">
-    <div class="fixed inset-0 -z-10 h-full w-full bg-background [background:radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px] opacity-20"></div>
-    
-    <div class="relative flex min-h-screen flex-col">
+  <body class="relative min-h-screen overflow-hidden bg-background font-sans antialiased text-foreground selection:bg-primary selection:text-primary-foreground">
+    <BackgroundRippleEffect client:idle />
+
+    <div class="relative flex min-h-screen flex-col z-10">
       <main class="flex-1">
         <slot />
       </main>
