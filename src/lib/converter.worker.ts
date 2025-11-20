@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import pLimit from "p-limit";
+import { ModrinthManifestSchema } from "./types";
 import type { ModrinthManifest, ModrinthFile, WorkerMessage, WorkerResponse } from "./types";
 
 const ctx: Worker = self as any;
@@ -9,25 +10,45 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
   try {
     if (type === "READ_MANIFEST") {
-      const { file } = event.data as { file: File };
-      const manifest = await readManifest(file);
+      const data = event.data as { file: File };
+      const manifest = await readManifest(data.file);
       ctx.postMessage({ type: "MANIFEST_READ", manifest } satisfies WorkerResponse);
-    } 
-    else if (type === "CONVERT") {
-      const { file, manifest, options } = event.data as { file: File; manifest: ModrinthManifest; options: { serverMode: boolean } };
-      await convert(file, manifest, options);
+    } else if (type === "CONVERT") {
+      const data = event.data as { file: File; manifest: ModrinthManifest; options: { serverMode: boolean } };
+      await convert(data.file, data.manifest, data.options);
     }
   } catch (err) {
-    ctx.postMessage({ type: "ERROR", error: err instanceof Error ? err.message : "Unknown error occurred in worker" } satisfies WorkerResponse);
+    ctx.postMessage({
+      type: "ERROR",
+      error: err instanceof Error ? err.message : "Unknown error occurred in worker",
+    } satisfies WorkerResponse);
   }
 };
 
 async function readManifest(file: File): Promise<ModrinthManifest> {
-  const zip = await JSZip.loadAsync(file);
-  const manifestFile = zip.file("modrinth.index.json");
-  if (!manifestFile) throw new Error("modrinth.index.json not found.");
-  const manifestContent = await manifestFile.async("string");
-  return JSON.parse(manifestContent) as ModrinthManifest;
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const manifestFile = zip.file("modrinth.index.json");
+
+    if (!manifestFile) {
+      throw new Error("Invalid MrPack: modrinth.index.json not found in archive.");
+    }
+
+    const manifestContent = await manifestFile.async("string");
+    const json = JSON.parse(manifestContent);
+
+    const parsed = ModrinthManifestSchema.parse(json);
+    return parsed;
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      const field = err.issues[0]?.path.join(".") || "unknown field";
+      throw new Error(`Invalid Manifest structure: Error in field '${field}' - ${err.issues[0]?.message}`);
+    }
+    if (err.message.includes("Corrupted zip")) {
+      throw new Error("File is corrupted or not a valid ZIP archive.");
+    }
+    throw err;
+  }
 }
 
 async function convert(file: File, manifest: ModrinthManifest, options: { serverMode: boolean }) {
@@ -42,7 +63,7 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
   let completed = 0;
 
   postProgress("Copying overrides/configs...", 5);
-  
+
   const overridesDir = "overrides";
   originalZip.folder(overridesDir)?.forEach((relativePath, zipEntry) => {
     if (!zipEntry.dir) {
@@ -67,10 +88,14 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
       const fileName = modFile.path.split("/").pop() || "unknown.jar";
       const downloadUrl = modFile.downloads[0];
 
+      if (!downloadUrl) {
+        completed++;
+        return;
+      }
+
       try {
         postProgress(`Downloading ${fileName}...`, 10 + (completed / totalFiles) * 80);
 
-        letPvBlob: Blob;
         let fileBlob: Blob;
         const cachedResponse = await cache.match(downloadUrl);
 
@@ -79,6 +104,7 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
         } else {
           const response = await fetch(downloadUrl);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
           cache.put(downloadUrl, response.clone());
           fileBlob = await response.blob();
         }
@@ -98,14 +124,14 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
   const content = await newZip.generateAsync({ type: "blob" });
 
   postProgress("Done! Preparing download...", 100);
-  
+
   const suffix = options.serverMode ? "SERVER-PACK" : "FULL";
   const finalFileName = `${manifest.name}-${manifest.versionId}-${suffix}.zip`;
 
-  ctx.postMessage({ 
-    type: "DONE", 
-    blob: content, 
-    fileName: finalFileName 
+  ctx.postMessage({
+    type: "DONE",
+    blob: content,
+    fileName: finalFileName,
   } satisfies WorkerResponse);
 }
 

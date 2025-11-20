@@ -1,31 +1,40 @@
-export interface ModrinthFile {
-  path: string;
-  hashes: {
-    sha1: string;
-    sha512: string;
-  };
-  env?: {
-    client: string;
-    server: string;
-  };
-  downloads: string[];
-  fileSize: number;
-}
+import { z } from "zod";
 
-export interface ModrinthManifest {
-  formatVersion: number;
-  game: string;
-  versionId: string;
-  name: string;
-  summary?: string;
-  files: ModrinthFile[];
-  dependencies: {
-    minecraft: string;
-    "fabric-loader"?: string;
-    forge?: string;
-    "neo-forge"?: string;
-  };
-}
+export const ModrinthFileSchema = z.object({
+  path: z.string(),
+  hashes: z.object({
+    sha1: z.string(),
+    sha512: z.string(),
+  }),
+  env: z
+    .object({
+      client: z.string(),
+      server: z.string(),
+    })
+    .optional(),
+  downloads: z.array(z.string()),
+  fileSize: z.number(),
+});
+
+export const ModrinthManifestSchema = z.object({
+  formatVersion: z.number(),
+  game: z.string(),
+  versionId: z.string(),
+  name: z.string(),
+  summary: z.string().optional().nullable(),
+  files: z.array(ModrinthFileSchema),
+  dependencies: z.record(z.string(), z.string()).and(
+    z.object({
+      minecraft: z.string(),
+      "fabric-loader": z.string().optional(),
+      forge: z.string().optional(),
+      "neo-forge": z.string().optional(),
+    })
+  ),
+});
+
+export type ModrinthFile = z.infer<typeof ModrinthFileSchema>;
+export type ModrinthManifest = z.infer<typeof ModrinthManifestSchema>;
 
 export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "done" | "error";
 

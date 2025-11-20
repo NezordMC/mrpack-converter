@@ -62,9 +62,15 @@ export default function Dropzone({ onFileSelect, onUrlSubmit, isProcessing }: Dr
 
   const validateAndPass = (file: File) => {
     if (!file.name.endsWith(".mrpack")) {
-      setError("Invalid file type. Please upload a .mrpack file.");
+      setError("Invalid file extension. Only .mrpack files are supported.");
       return;
     }
+
+    if (file.size === 0) {
+      setError("File is empty.");
+      return;
+    }
+
     onFileSelect(file);
   };
 
