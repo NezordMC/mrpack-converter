@@ -32,3 +32,7 @@ export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "do
 export interface ConversionOptions {
   serverMode: boolean;
 }
+
+export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions };
+
+export type WorkerResponse = { type: "MANIFEST_READ"; manifest: ModrinthManifest } | { type: "PROGRESS"; log: string; progress: number } | { type: "DONE"; blob: Blob; fileName: string } | { type: "ERROR"; error: string };

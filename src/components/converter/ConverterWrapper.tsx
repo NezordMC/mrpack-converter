@@ -1,12 +1,13 @@
 import { useState } from "react";
 import Dropzone from "./Dropzone";
-import PackDetails from "./PackDetails";
+import QU from "./PackDetails";
 import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
 import type { ModrinthManifest } from "@/lib/types";
 import { Loader2, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Download, RefreshCcw } from "lucide-react";
+import PackDetails from "./PackDetails";
 
 export default function ConverterWrapper() {
   const [manifest, setManifest] = useState<ModrinthManifest | null>(null);
@@ -71,7 +72,8 @@ export default function ConverterWrapper() {
       );
       setIsDone(true);
     } catch (err) {
-      setError("Conversion failed. Check console for details.");
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Conversion failed.");
     } finally {
       setIsConverting(false);
     }
@@ -96,7 +98,7 @@ export default function ConverterWrapper() {
       <div className="w-full max-w-xl bg-card border rounded-xl p-8 space-y-6 shadow-2xl">
         <div className="text-center space-y-2">
           <h3 className="text-2xl font-bold animate-pulse">Converting Pack...</h3>
-          <p className="text-muted-foreground">Please do not close this tab.</p>
+          <p className="text-muted-foreground">Please do not close this tab. Processing in background.</p>
         </div>
 
         <div className="space-y-2">
@@ -146,7 +148,7 @@ export default function ConverterWrapper() {
             <RefreshCcw className="w-4 h-4" />
             Convert Another
           </Button>
-          <Button variant="secondary" onClick={() => alert("Cek folder download browser Anda!")} className="gap-2">
+          <Button variant="secondary" onClick={() => alert("Check your browser download folder!")} className="gap-2">
             <Download className="w-4 h-4" />
             Download Again
           </Button>
