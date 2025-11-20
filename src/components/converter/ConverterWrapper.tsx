@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
 import type { ModrinthManifest } from "@/lib/types";
 import { Loader2, Terminal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Download, RefreshCcw } from "lucide-react";
 
 export default function ConverterWrapper() {
   const [manifest, setManifest] = useState<ModrinthManifest | null>(null);
@@ -14,6 +16,7 @@ export default function ConverterWrapper() {
   const [progress, setProgress] = useState(0);
   const [currentLog, setCurrentLog] = useState("Initializing...");
   const [error, setError] = useState<string | null>(null);
+  const [isDone, setIsDone] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     setIsLoading(true);
@@ -37,6 +40,7 @@ export default function ConverterWrapper() {
     if (!manifest || !rawFile) return;
 
     setIsConverting(true);
+    setIsDone(false);
     setProgress(0);
 
     try {
@@ -44,6 +48,7 @@ export default function ConverterWrapper() {
         setCurrentLog(log);
         setProgress(prog);
       });
+      setIsDone(true);
     } catch (err) {
       setError("Conversion failed. Check console for details.");
     } finally {
@@ -56,6 +61,13 @@ export default function ConverterWrapper() {
     setError(null);
     setRawFile(null);
     setIsConverting(false);
+  };
+
+  const handleReset = () => {
+    setManifest(null);
+    setRawFile(null);
+    setIsDone(false);
+    setError(null);
   };
 
   if (isConverting) {
@@ -90,6 +102,36 @@ export default function ConverterWrapper() {
       <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-in fade-in">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
         <p className="text-muted-foreground">Reading modpack manifest...</p>
+      </div>
+    );
+  }
+
+  if (isDone) {
+    return (
+      <div className="w-full max-w-xl bg-card border border-green-500/20 rounded-xl p-8 space-y-6 shadow-2xl text-center animate-in zoom-in-95 duration-300">
+        <div className="flex justify-center">
+          <div className="p-4 bg-green-500/10 rounded-full text-green-500 ring-1 ring-green-500/20">
+            <CheckCircle2 className="w-12 h-12" />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <h3 className="text-2xl font-bold text-foreground">Conversion Complete!</h3>
+          <p className="text-muted-foreground">
+            Your download should have started automatically.
+          </p>
+        </div>
+
+        <div className="flex gap-3 justify-center pt-4">
+          <Button variant="outline" onClick={handleReset} className="gap-2">
+            <RefreshCcw className="w-4 h-4" />
+            Convert Another
+          </Button>
+          <Button variant="secondary" onClick={() => alert("Cek folder download browser Anda!")} className="gap-2">
+            <Download className="w-4 h-4" />
+            Download Again
+          </Button>
+        </div>
       </div>
     );
   }
