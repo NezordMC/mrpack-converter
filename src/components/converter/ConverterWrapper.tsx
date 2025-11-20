@@ -17,13 +17,13 @@ export default function ConverterWrapper() {
   const [currentLog, setCurrentLog] = useState("Initializing...");
   const [error, setError] = useState<string | null>(null);
   const [isDone, setIsDone] = useState(false);
+  const [rawFile, setRawFile] = useState<File | null>(null);
 
-  const handleFileSelect = async (file: File) => {
+  const processFile = async (file: File) => {
     setIsLoading(true);
     setError(null);
     try {
       setRawFile(file);
-
       const data = await ConverterEngine.readManifest(file);
       setManifest(data);
     } catch (err) {
@@ -34,7 +34,22 @@ export default function ConverterWrapper() {
     }
   };
 
-  const [rawFile, setRawFile] = useState<File | null>(null);
+  const handleFileSelect = (file: File) => {
+    processFile(file);
+  };
+
+  const handleUrlSubmit = async (url: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const file = await ConverterEngine.downloadFileFromUrl(url);
+      processFile(file);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to download file from URL. Ensure CORS is allowed or the URL is a direct link.");
+      setIsLoading(false);
+    }
+  };
 
   const handleStartConversion = async (manifestOverride?: ModrinthManifest, isServerMode: boolean = false) => {
     const targetManifest = manifestOverride || manifest;
@@ -107,7 +122,7 @@ export default function ConverterWrapper() {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-in fade-in">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground">Reading modpack manifest...</p>
+        <p className="text-muted-foreground">Processing modpack...</p>
       </div>
     );
   }
@@ -146,7 +161,7 @@ export default function ConverterWrapper() {
 
   return (
     <div className="w-full max-w-2xl space-y-4">
-      <Dropzone onFileSelect={handleFileSelect} isProcessing={isLoading} />
+      <Dropzone onFileSelect={handleFileSelect} onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
       {error && <div className="p-4 bg-destructive/10 text-destructive rounded-lg text-center text-sm font-medium border border-destructive/20">{error}</div>}
     </div>
   );
