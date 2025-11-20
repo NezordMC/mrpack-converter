@@ -21,8 +21,9 @@ export interface ModrinthManifest {
   files: ModrinthFile[];
   dependencies: {
     minecraft: string;
-    fabric-loader?: string;
+    "fabric-loader"?: string;
     forge?: string;
+    "neo-forge"?: string;
   };
 }
 
