@@ -1,6 +1,5 @@
 ---
 import "@/styles/global.css";
-import ReloadPrompt from "@/components/pwa/ReloadPrompt";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 
 interface Props {
@@ -9,26 +8,22 @@ interface Props {
 }
 
 const { 
-  title = "MrPack Converter", 
+  title = "Mrpack Converter", 
   description = "Convert Modrinth .mrpack files to ZIP easily directly in your browser."
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
-  <head>
+<html lang="en" class="dark"> <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
     
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
-    <link rel="mask-icon" href="/favicon.svg" color="#FFFFFF" />
-    <meta name="theme-color" content="#09090b" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <title>{title}</title>
   </head>
@@ -40,8 +35,6 @@ const {
         <slot />
       </main>
     </div>
-    
-    <ReloadPrompt client:only="react" />
   </body>
 </html>
 
