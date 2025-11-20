@@ -6,6 +6,14 @@ import type { ModrinthManifest, ModrinthFile, ConversionOptions } from "./types"
 type ProgressCallback = (log: string, progress: number) => void;
 
 export class ConverterEngine {
+  static async downloadFileFromUrl(url: string): Promise<File> {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to download file: ${response.statusText}`);
+    const blob = await response.blob();
+    const fileName = url.split("/").pop() || "modpack.mrpack";
+    return new File([blob], fileName, { type: "application/octet-stream" });
+  }
+
   static async readManifest(file: File): Promise<ModrinthManifest> {
     try {
       const zip = await JSZip.loadAsync(file);
@@ -62,10 +70,8 @@ export class ConverterEngine {
           const cachedResponse = await cache.match(downloadUrl);
 
           if (cachedResponse) {
-            console.log(`[Cache Hit] ${fileName}`);
             blob = await cachedResponse.blob();
           } else {
-            console.log(`[Network Fetch] ${fileName}`);
             const response = await fetch(downloadUrl);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
