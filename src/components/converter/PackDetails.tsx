@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare } from "lucide-react";
+import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare, Server, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import type { ModrinthManifest } from "@/lib/types";
 
 interface PackDetailsProps {
   manifest: ModrinthManifest;
-  onStartConversion: (filteredManifest: ModrinthManifest) => void;
+  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean) => void;
   onCancel: () => void;
 }
 
@@ -20,11 +22,56 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
+const CLIENT_KEYWORDS = [
+  "sodium",
+  "iris",
+  "optifine",
+  "zoomify",
+  "modmenu",
+  "authme",
+  "skin",
+  "capes",
+  "shader",
+  "toast",
+  "xaero",
+  "journey",
+  "rei",
+  "jei",
+  "emi",
+  "jade",
+  "wthit",
+  "appleskin",
+  "controlling",
+  "mouse",
+  "catalogue",
+  "lazydfu",
+  "ferrite",
+  "krypton",
+  "dashloader",
+  "sound",
+  "ambient",
+  "music",
+  "blur",
+  "gamma",
+  "fullbright",
+  "dynamiclights",
+  "entityculling",
+  "indium",
+  "continuity",
+  "cit",
+  "cem",
+  "3dskin",
+  "physics",
+  "presence",
+  "notenoughanimations",
+  "freecam",
+];
+
 export default function PackDetails({ manifest, onStartConversion, onCancel }: PackDetailsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFiles, setShowFiles] = useState(false);
-
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [isServerMode, setIsServerMode] = useState(false);
 
   useEffect(() => {
     const allPaths = new Set(manifest.files.map((f) => f.path));
@@ -32,6 +79,33 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
   }, [manifest]);
 
   const filteredFiles = manifest.files.filter((f) => f.path.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const handleServerModeToggle = (checked: boolean) => {
+    setIsServerMode(checked);
+
+    if (checked) {
+      const serverFriendlyFiles = new Set<string>();
+
+      manifest.files.forEach((f) => {
+        const fileName = f.path.split("/").pop()?.toLowerCase() || "";
+
+        const isMarkedUnsupported = f.env?.server === "unsupported";
+
+        const isKeywordClientOnly = CLIENT_KEYWORDS.some((keyword) => fileName.includes(keyword));
+
+        const isClientOnly = isMarkedUnsupported || isKeywordClientOnly;
+
+        if (!isClientOnly) {
+          serverFriendlyFiles.add(f.path);
+        } else {
+        }
+      });
+      setSelectedPaths(serverFriendlyFiles);
+    } else {
+      const allPaths = new Set(manifest.files.map((f) => f.path));
+      setSelectedPaths(allPaths);
+    }
+  };
 
   const toggleFile = (path: string) => {
     const next = new Set(selectedPaths);
@@ -53,13 +127,8 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
 
   const handleConvertClick = () => {
     const finalFiles = manifest.files.filter((f) => selectedPaths.has(f.path));
-
-    const newManifest = {
-      ...manifest,
-      files: finalFiles,
-    };
-
-    onStartConversion(newManifest);
+    const newManifest = { ...manifest, files: finalFiles };
+    onStartConversion(newManifest, isServerMode);
   };
 
   const selectedCount = selectedPaths.size;
@@ -102,19 +171,33 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
         </div>
       </div>
 
-      <div className="p-6 pb-2 bg-card flex flex-col gap-3">
-        <Button
-          onClick={handleConvertClick}
-          size="lg"
-          disabled={selectedCount === 0}
-          className="w-full gap-2 text-lg shadow-lg shadow-primary/20"
-        >
-          {selectedCount === 0 ? "Select files to convert" : "Convert to ZIP"}
+      <div className="p-6 pb-4 bg-card flex flex-col gap-4">
+        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-md transition-colors ${isServerMode ? "bg-orange-500/20 text-orange-500" : "bg-orange-500/10 text-orange-500"}`}>
+              <Server className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5">
+              <Label htmlFor="server-mode" className="text-sm font-medium cursor-pointer">
+                Server Pack Mode
+              </Label>
+              <p className="text-[10px] text-muted-foreground">Auto-remove client mods & generate scripts</p>
+            </div>
+          </div>
+          <Switch id="server-mode" checked={isServerMode} onCheckedChange={handleServerModeToggle} />
+        </div>
+
+        <Button onClick={handleConvertClick} size="lg" disabled={selectedCount === 0} className="w-full gap-2 text-lg shadow-lg shadow-primary/20 transition-all">
+          {selectedCount === 0 ? "Select files to convert" : isServerMode ? "Generate Server Pack" : "Convert to ZIP"}
           <ArrowRight className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" onClick={onCancel} className="w-full text-muted-foreground hover:text-destructive">
-          Cancel Operation
-        </Button>
+
+        {isServerMode && (
+          <p className="text-[10px] text-center text-orange-500/80 flex items-center justify-center gap-1 animate-in fade-in slide-in-from-top-1">
+            <AlertTriangle className="w-3 h-3" />
+            Double-check the list below before downloading.
+          </p>
+        )}
       </div>
 
       <div className="px-6 pb-6">
@@ -143,16 +226,22 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
 
                   <div className="max-h-[250px] overflow-y-auto space-y-1 pr-1 custom-scrollbar border rounded-md p-1 bg-background/50">
                     {filteredFiles.length > 0 ? (
-                      filteredFiles.map((file, idx) => {
-                        const fileName = file.path.split("/").pop();
+                      filteredFiles.map((file) => {
+                        const fileName = file.path.split("/").pop() || "";
                         const isJar = fileName?.endsWith(".jar");
                         const isSelected = selectedPaths.has(file.path);
+
+                        const isMarkedUnsupported = file.env?.server === "unsupported";
+                        const isKeywordClientOnly = CLIENT_KEYWORDS.some((k) => fileName.toLowerCase().includes(k));
+                        const isLikelyClient = isMarkedUnsupported || isKeywordClientOnly;
 
                         return (
                           <div
                             key={file.path}
                             onClick={() => toggleFile(file.path)}
-                            className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors text-xs group border border-transparent ${isSelected ? "bg-accent/40 border-primary/10" : "hover:bg-accent/30"}`}
+                            className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors text-xs group border border-transparent ${isSelected ? "bg-accent/40 border-primary/10" : "hover:bg-accent/30"} ${
+                              !isSelected && isLikelyClient && isServerMode ? "opacity-50 grayscale-[0.5]" : ""
+                            }`}
                           >
                             <Checkbox checked={isSelected} onCheckedChange={() => toggleFile(file.path)} className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
 
@@ -160,7 +249,10 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
 
                             <div className="flex-1 min-w-0">
                               <p className={`truncate font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{fileName}</p>
-                              <p className="text-muted-foreground text-[10px] truncate opacity-60">{file.path}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-muted-foreground text-[10px] truncate opacity-60">{file.path}</p>
+                                {isLikelyClient && <span className="text-[9px] px-1.5 py-0 rounded bg-red-500/10 text-red-500 font-mono border border-red-500/20">CLIENT MOD</span>}
+                              </div>
                             </div>
 
                             <span className="text-[10px] text-muted-foreground font-mono shrink-0">{formatBytes(file.fileSize)}</span>

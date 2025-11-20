@@ -36,9 +36,8 @@ export default function ConverterWrapper() {
 
   const [rawFile, setRawFile] = useState<File | null>(null);
 
-  const handleStartConversion = async (manifestOverride?: ModrinthManifest) => {
+  const handleStartConversion = async (manifestOverride?: ModrinthManifest, isServerMode: boolean = false) => {
     const targetManifest = manifestOverride || manifest;
-
     if (!targetManifest || !rawFile) return;
 
     setIsConverting(true);
@@ -46,10 +45,15 @@ export default function ConverterWrapper() {
     setProgress(0);
 
     try {
-      await ConverterEngine.convert(rawFile, targetManifest, (log, prog) => {
-        setCurrentLog(log);
-        setProgress(prog);
-      });
+      await ConverterEngine.convert(
+        rawFile,
+        targetManifest,
+        (log, prog) => {
+          setCurrentLog(log);
+          setProgress(prog);
+        },
+        { serverMode: isServerMode }
+      );
       setIsDone(true);
     } catch (err) {
       setError("Conversion failed. Check console for details.");

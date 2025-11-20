@@ -27,4 +27,8 @@ export interface ModrinthManifest {
   };
 }
 
-export type ConvertStatus = 'idle' | 'reading' | 'downloading' | 'zipping' | 'done' | 'error';
+export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "done" | "error";
+
+export interface ConversionOptions {
+  serverMode: boolean;
+}
