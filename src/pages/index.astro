@@ -1,6 +1,7 @@
 ---
 import MainLayout from "@/layouts/MainLayout.astro";
 import { PackageOpen } from "lucide-react";
+import Dropzone from "@/components/converter/Dropzone";
 ---
 
 <MainLayout title="MrPack to ZIP Converter">
@@ -24,8 +25,13 @@ import { PackageOpen } from "lucide-react";
     </div>
 
     <div class="w-full max-w-2xl">
-       <div class="p-12 border-2 border-dashed border-muted rounded-xl bg-card/30 text-center text-muted-foreground">
-       </div>
+       <Dropzone 
+         client:load 
+         onFileSelect={(file) => {
+           console.log("File selected:", file.name);
+           alert(`File loaded: ${file.name}`);
+         }} 
+       />
     </div>
 
     <footer class="mt-auto pt-12 text-center text-sm text-muted-foreground/60">
