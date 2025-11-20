@@ -36,15 +36,17 @@ export default function ConverterWrapper() {
 
   const [rawFile, setRawFile] = useState<File | null>(null);
 
-  const handleStartConversion = async () => {
-    if (!manifest || !rawFile) return;
+  const handleStartConversion = async (manifestOverride?: ModrinthManifest) => {
+    const targetManifest = manifestOverride || manifest;
+
+    if (!targetManifest || !rawFile) return;
 
     setIsConverting(true);
     setIsDone(false);
     setProgress(0);
 
     try {
-      await ConverterEngine.convert(rawFile, manifest, (log, prog) => {
+      await ConverterEngine.convert(rawFile, targetManifest, (log, prog) => {
         setCurrentLog(log);
         setProgress(prog);
       });
@@ -114,12 +116,10 @@ export default function ConverterWrapper() {
             <CheckCircle2 className="w-12 h-12" />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <h3 className="text-2xl font-bold text-foreground">Conversion Complete!</h3>
-          <p className="text-muted-foreground">
-            Your download should have started automatically.
-          </p>
+          <p className="text-muted-foreground">Your download should have started automatically.</p>
         </div>
 
         <div className="flex gap-3 justify-center pt-4">
