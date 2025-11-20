@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Dropzone from "./Dropzone";
+import ModpackFinder from "./ModpackFinder";
 import PackDetails from "./PackDetails";
 import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
@@ -220,6 +221,7 @@ export default function ConverterWrapper() {
     <div className="w-full max-w-2xl backdrop-blur-xl bg-black/40 border border-white/10 p-1 rounded-2xl shadow-2xl ring-1 ring-white/5 animate-in slide-in-from-bottom-4 duration-500">
       <div className="bg-card/50 rounded-xl p-6 md:p-8 space-y-4">
         <Dropzone onFileSelect={handleFileSelect} onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
+        <ModpackFinder onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
         {error && (
           <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 text-sm font-medium border border-destructive/20 animate-in shake">
             <AlertCircle className="w-5 h-5 shrink-0" />
