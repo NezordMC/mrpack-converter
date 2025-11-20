@@ -2,8 +2,7 @@
 import MainLayout from "@/layouts/MainLayout.astro";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import ConverterWrapper from "@/components/converter/ConverterWrapper";
-import { PackageOpen, Github, Coffee } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import HowItWorks from "@/components/landing/HowItWorks";
 ---
 
 <MainLayout title="MrPack to ZIP Converter | Fast & Offline">
@@ -30,14 +29,7 @@ import { Button } from "@/components/ui/button";
             <ConverterWrapper client:visible />
       </div>
 
-      <div class="flex flex-wrap items-center justify-center gap-4 pt-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-        <a href="https://github.com/NezordMC/mrpack-converter" target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm transition-all hover:scale-105">
-            <Github className="w-4 h-4" />
-            Star on GitHub
-          </Button>
-        </a>
-      </div>
+      <HowItWorks client:visible />
 
       <footer class="mt-auto pt-20 pb-6 text-center text-sm text-muted-foreground/60 relative z-10">
         <p>&copy; {new Date().getFullYear()} Mrpack Converter. Built with Astro.</p>

@@ -232,7 +232,15 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
               <span className="font-mono">{formatBytes(totalSize)}</span>
             </div>
           </div>
-          <Button onClick={handleConvertClick} size="lg" disabled={selectedCount === 0} className="w-full gap-2 shadow-lg shadow-primary/20">
+          <Button
+            onClick={() =>
+              onStartConversion(
+                { ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) },
+                isServerMode,
+                selectedLoader
+              )
+            }
+            size="lg" disabled={selectedCount === 0} className="w-full gap-2 shadow-lg shadow-primary/20">
             {isServerMode ? "Generate Server Pack" : "Convert to ZIP"}
             <ArrowRight className="w-4 h-4" />
           </Button>
