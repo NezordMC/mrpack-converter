@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare, Server, AlertTriangle } from "lucide-react";
+import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare, Server, AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +10,7 @@ import type { ModrinthManifest } from "@/lib/types";
 
 interface PackDetailsProps {
   manifest: ModrinthManifest;
-  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean) => void;
+  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string) => void;
   onCancel: () => void;
 }
 
@@ -73,6 +73,15 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isServerMode, setIsServerMode] = useState(false);
 
+  const availableLoaders = [
+    manifest.dependencies["fabric-loader"] ? "fabric-server-launch.jar" : null,
+    manifest.dependencies["forge"] ? "forge-server.jar" : null,
+    manifest.dependencies["neo-forge"] ? "neoforge-server.jar" : null,
+    "server.jar",
+  ].filter(Boolean) as string[];
+
+  const [selectedLoader, setSelectedLoader] = useState<string>(availableLoaders[0] || "server.jar");
+
   useEffect(() => {
     const allPaths = new Set(manifest.files.map((f) => f.path));
     setSelectedPaths(allPaths);
@@ -82,53 +91,40 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
 
   const handleServerModeToggle = (checked: boolean) => {
     setIsServerMode(checked);
-
     if (checked) {
       const serverFriendlyFiles = new Set<string>();
-
       manifest.files.forEach((f) => {
         const fileName = f.path.split("/").pop()?.toLowerCase() || "";
-
         const isMarkedUnsupported = f.env?.server === "unsupported";
-
         const isKeywordClientOnly = CLIENT_KEYWORDS.some((keyword) => fileName.includes(keyword));
-
         const isClientOnly = isMarkedUnsupported || isKeywordClientOnly;
 
         if (!isClientOnly) {
           serverFriendlyFiles.add(f.path);
-        } else {
         }
       });
       setSelectedPaths(serverFriendlyFiles);
-    } else {
-      const allPaths = new Set(manifest.files.map((f) => f.path));
-      setSelectedPaths(allPaths);
-    }
-  };
-
-  const toggleFile = (path: string) => {
-    const next = new Set(selectedPaths);
-    if (next.has(path)) {
-      next.delete(path);
-    } else {
-      next.add(path);
-    }
-    setSelectedPaths(next);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedPaths.size === manifest.files.length) {
-      setSelectedPaths(new Set());
     } else {
       setSelectedPaths(new Set(manifest.files.map((f) => f.path)));
     }
   };
 
+  const toggleFile = (path: string) => {
+    const next = new Set(selectedPaths);
+    if (next.has(path)) next.delete(path);
+    else next.add(path);
+    setSelectedPaths(next);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedPaths.size === manifest.files.length) setSelectedPaths(new Set());
+    else setSelectedPaths(new Set(manifest.files.map((f) => f.path)));
+  };
+
   const handleConvertClick = () => {
     const finalFiles = manifest.files.filter((f) => selectedPaths.has(f.path));
     const newManifest = { ...manifest, files: finalFiles };
-    onStartConversion(newManifest, isServerMode);
+    onStartConversion(newManifest, isServerMode, selectedLoader);
   };
 
   const selectedCount = selectedPaths.size;
@@ -187,17 +183,33 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
           <Switch id="server-mode" checked={isServerMode} onCheckedChange={handleServerModeToggle} />
         </div>
 
+        {isServerMode && (
+          <div className="p-3 border rounded-lg bg-muted/30 space-y-2 animate-in fade-in slide-in-from-top-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Target Loader File</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {availableLoaders.map((loader) => (
+                <div
+                  key={loader}
+                  onClick={() => setSelectedLoader(loader)}
+                  className={`cursor-pointer border rounded px-3 py-2 text-xs flex items-center justify-between transition-all ${
+                    selectedLoader === loader ? "border-primary bg-primary/5 text-primary shadow-sm" : "hover:bg-accent/50 bg-background"
+                  }`}
+                >
+                  <span className="font-mono truncate" title={loader}>
+                    {loader}
+                  </span>
+                  {selectedLoader === loader && <CheckCircle className="w-3 h-3" />}
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">This filename will be used in start.bat/start.sh</p>
+          </div>
+        )}
+
         <Button onClick={handleConvertClick} size="lg" disabled={selectedCount === 0} className="w-full gap-2 text-lg shadow-lg shadow-primary/20 transition-all">
           {selectedCount === 0 ? "Select files to convert" : isServerMode ? "Generate Server Pack" : "Convert to ZIP"}
           <ArrowRight className="w-5 h-5" />
         </Button>
-
-        {isServerMode && (
-          <p className="text-[10px] text-center text-orange-500/80 flex items-center justify-center gap-1 animate-in fade-in slide-in-from-top-1">
-            <AlertTriangle className="w-3 h-3" />
-            Double-check the list below before downloading.
-          </p>
-        )}
       </div>
 
       <div className="px-6 pb-6">
@@ -230,7 +242,6 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
                         const fileName = file.path.split("/").pop() || "";
                         const isJar = fileName?.endsWith(".jar");
                         const isSelected = selectedPaths.has(file.path);
-
                         const isMarkedUnsupported = file.env?.server === "unsupported";
                         const isKeywordClientOnly = CLIENT_KEYWORDS.some((k) => fileName.toLowerCase().includes(k));
                         const isLikelyClient = isMarkedUnsupported || isKeywordClientOnly;
@@ -244,9 +255,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
                             }`}
                           >
                             <Checkbox checked={isSelected} onCheckedChange={() => toggleFile(file.path)} className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-
                             <div className={`p-1 rounded-md shrink-0 ${isJar ? "bg-orange-500/10 text-orange-500" : "bg-blue-500/10 text-blue-500"}`}>{isJar ? <Box className="w-3 h-3" /> : <File className="w-3 h-3" />}</div>
-
                             <div className="flex-1 min-w-0">
                               <p className={`truncate font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{fileName}</p>
                               <div className="flex items-center gap-2 mt-0.5">
@@ -254,7 +263,6 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
                                 {isLikelyClient && <span className="text-[9px] px-1.5 py-0 rounded bg-red-500/10 text-red-500 font-mono border border-red-500/20">CLIENT MOD</span>}
                               </div>
                             </div>
-
                             <span className="text-[10px] text-muted-foreground font-mono shrink-0">{formatBytes(file.fileSize)}</span>
                           </div>
                         );

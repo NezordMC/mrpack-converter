@@ -1,9 +1,11 @@
 import saveAs from "file-saver";
 import type { ModrinthManifest, ConversionOptions, WorkerResponse } from "./types";
 
-type ProgressCallback = (log: string, progress: number) => void;
+type ProgressCallback = (log: string, progress: number, eta: number) => void;
 
 export class ConverterEngine {
+  private static activeWorker: Worker | null = null;
+
   static async downloadFileFromUrl(url: string): Promise<File> {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to download file: ${response.statusText}`);
@@ -36,30 +38,28 @@ export class ConverterEngine {
     });
   }
 
-  static convert(
-    file: File, 
-    manifest: ModrinthManifest, 
-    onProgress: ProgressCallback, 
-    options: ConversionOptions = { serverMode: false }
-  ): Promise<void> {
+  static convert(file: File, manifest: ModrinthManifest, onProgress: ProgressCallback, options: ConversionOptions): Promise<void> {
     return new Promise((resolve, reject) => {
-      const worker = new Worker(new URL("./converter.worker.ts", import.meta.url), { type: "module" });
+      this.activeWorker = new Worker(new URL("./converter.worker.ts", import.meta.url), { type: "module" });
+      const worker = this.activeWorker;
 
       worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
         const data = event.data;
 
         switch (data.type) {
           case "PROGRESS":
-            onProgress(data.log, data.progress);
+            onProgress(data.log, data.progress, data.eta);
             break;
           case "DONE":
             saveAs(data.blob, data.fileName);
             worker.terminate();
+            this.activeWorker = null;
             resolve();
             break;
           case "ERROR":
             reject(new Error(data.error));
             worker.terminate();
+            this.activeWorker = null;
             break;
         }
       };
@@ -67,9 +67,29 @@ export class ConverterEngine {
       worker.onerror = (err) => {
         reject(err);
         worker.terminate();
+        this.activeWorker = null;
       };
 
       worker.postMessage({ type: "CONVERT", file, manifest, options });
     });
+  }
+
+  static pause() {
+    if (this.activeWorker) {
+      this.activeWorker.postMessage({ type: "PAUSE" });
+    }
+  }
+
+  static resume() {
+    if (this.activeWorker) {
+      this.activeWorker.postMessage({ type: "RESUME" });
+    }
+  }
+
+  static terminate() {
+    if (this.activeWorker) {
+      this.activeWorker.terminate();
+      this.activeWorker = null;
+    }
   }
 }

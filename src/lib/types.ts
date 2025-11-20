@@ -36,12 +36,13 @@ export const ModrinthManifestSchema = z.object({
 export type ModrinthFile = z.infer<typeof ModrinthFileSchema>;
 export type ModrinthManifest = z.infer<typeof ModrinthManifestSchema>;
 
-export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "done" | "error";
+export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "paused" | "done" | "error";
 
 export interface ConversionOptions {
   serverMode: boolean;
+  selectedLoader: string;
 }
 
-export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions };
+export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions } | { type: "PAUSE" } | { type: "RESUME" };
 
-export type WorkerResponse = { type: "MANIFEST_READ"; manifest: ModrinthManifest } | { type: "PROGRESS"; log: string; progress: number } | { type: "DONE"; blob: Blob; fileName: string } | { type: "ERROR"; error: string };
+export type WorkerResponse = { type: "MANIFEST_READ"; manifest: ModrinthManifest } | { type: "PROGRESS"; log: string; progress: number; eta: number } | { type: "DONE"; blob: Blob; fileName: string } | { type: "ERROR"; error: string };
