@@ -50,6 +50,7 @@ export interface ConversionOptions {
   selectedLoader: string;
   useCorsProxy: boolean;
   scriptOptions?: ServerScriptOptions;
+  injectedFiles: File[];
 }
 
 export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions } | { type: "PAUSE" } | { type: "RESUME" };

@@ -66,7 +66,8 @@ export default function ConverterWrapper() {
     isServerMode: boolean = false,
     selectedLoader: string = "server.jar",
     useCorsProxy: boolean = false,
-    scriptOptions?: ServerScriptOptions
+    scriptOptions?: ServerScriptOptions,
+    injectedFiles: File[] = []
   ) => {
     const targetManifest = manifestOverride || manifest;
     if (!targetManifest || !rawFile) return;
@@ -87,7 +88,7 @@ export default function ConverterWrapper() {
           setProgress(prog);
           setEta(estimatedTime);
         },
-        { serverMode: isServerMode, selectedLoader, useCorsProxy, scriptOptions }
+        { serverMode: isServerMode, selectedLoader, useCorsProxy, scriptOptions, injectedFiles }
       );
       setIsDone(true);
     } catch (err) {

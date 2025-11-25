@@ -8,10 +8,11 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import type { ModrinthManifest, ModrinthFile, ServerScriptOptions } from "@/lib/types";
 import ServerScriptConfig from "./ServerScriptConfig";
+import FileInjector from "./FileInjector";
 
 interface PackDetailsProps {
   manifest: ModrinthManifest;
-  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string, useCorsProxy: boolean, scriptOptions?: ServerScriptOptions) => void;
+  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string, useCorsProxy: boolean, scriptOptions?: ServerScriptOptions, injectedFiles?: File[]) => void;
   onCancel: () => void;
 }
 
@@ -101,6 +102,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
   const [filterMode, setFilterMode] = useState<"all" | "selected" | "excluded" | "client-only">("all");
   const [isFileListOpen, setIsFileListOpen] = useState(true);
   const [scriptOptions, setScriptOptions] = useState<ServerScriptOptions | undefined>(undefined);
+  const [injectedFiles, setInjectedFiles] = useState<File[]>([]);
 
   const availableLoaders = [
     manifest.dependencies["fabric-loader"] ? "fabric-server-launch.jar" : null,
@@ -273,6 +275,10 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
             </div>
             <Switch id="cors-proxy" checked={useCorsProxy} onCheckedChange={setUseCorsProxy} />
           </div>
+
+          <div className="pt-4 border-t border-dashed">
+             <FileInjector files={injectedFiles} onFilesChange={setInjectedFiles} />
+          </div>
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-sm flex flex-col justify-center space-y-4">
@@ -289,7 +295,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
             </div>
           </div>
           <Button
-            onClick={() => onStartConversion({ ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) }, isServerMode, selectedLoader, useCorsProxy, scriptOptions)}
+            onClick={() => onStartConversion({ ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) }, isServerMode, selectedLoader, useCorsProxy, scriptOptions, injectedFiles)}
             size="lg"
             disabled={selectedCount === 0}
             className="w-full gap-2 shadow-lg shadow-primary/20"
