@@ -41,6 +41,7 @@ export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "pa
 export interface ConversionOptions {
   serverMode: boolean;
   selectedLoader: string;
+  useCorsProxy: boolean;
 }
 
 export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions } | { type: "PAUSE" } | { type: "RESUME" };

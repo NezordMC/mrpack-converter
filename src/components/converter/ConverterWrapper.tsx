@@ -61,7 +61,7 @@ export default function ConverterWrapper() {
     }
   };
 
-  const handleStartConversion = async (manifestOverride?: ModrinthManifest, isServerMode: boolean = false, selectedLoader: string = "server.jar") => {
+  const handleStartConversion = async (manifestOverride?: ModrinthManifest, isServerMode: boolean = false, selectedLoader: string = "server.jar", useCorsProxy: boolean = false) => {
     const targetManifest = manifestOverride || manifest;
     if (!targetManifest || !rawFile) return;
 
@@ -81,7 +81,7 @@ export default function ConverterWrapper() {
           setProgress(prog);
           setEta(estimatedTime);
         },
-        { serverMode: isServerMode, selectedLoader }
+        { serverMode: isServerMode, selectedLoader, useCorsProxy } 
       );
       setIsDone(true);
     } catch (err) {
@@ -210,8 +210,6 @@ export default function ConverterWrapper() {
             Convert Another
           </Button>
         </div>
-
-        {/* Tampilkan cache manager setelah konversi selesai untuk melihat penggunaan storage */}
         <CacheManager />
       </div>
     );
@@ -226,9 +224,7 @@ export default function ConverterWrapper() {
       <div className="bg-card/50 rounded-xl p-6 md:p-8 space-y-4">
         <Dropzone onFileSelect={handleFileSelect} onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
         <ModpackFinder onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
-
         <CacheManager />
-
         {error && (
           <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 text-sm font-medium border border-destructive/20 animate-in shake">
             <AlertCircle className="w-5 h-5 shrink-0" />

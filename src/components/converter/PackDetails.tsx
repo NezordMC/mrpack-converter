@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare, Server, AlertTriangle, CheckCircle } from "lucide-react";
+import { Box, Layers, Gamepad2, ArrowRight, FileCode, Search, File, ChevronDown, ChevronUp, CheckSquare, Server, AlertTriangle, CheckCircle, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +10,7 @@ import type { ModrinthManifest } from "@/lib/types";
 
 interface PackDetailsProps {
   manifest: ModrinthManifest;
-  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string) => void;
+  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string, useCorsProxy: boolean) => void;
   onCancel: () => void;
 }
 
@@ -72,6 +72,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
   const [showFiles, setShowFiles] = useState(false);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isServerMode, setIsServerMode] = useState(false);
+  const [useCorsProxy, setUseCorsProxy] = useState(false);
 
   const availableLoaders = [
     manifest.dependencies["fabric-loader"] ? "fabric-server-launch.jar" : null,
@@ -177,8 +178,9 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
         </div>
 
         {/* Configuration Card */}
-        <div className="md:col-span-2 bg-card border rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="md:col-span-2 bg-card border rounded-xl p-6 shadow-sm space-y-6">
+          {/* Server Mode Toggle */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-md transition-colors ${isServerMode ? "bg-orange-500/20 text-orange-500" : "bg-muted text-muted-foreground"}`}>
                 <Server className="w-5 h-5" />
@@ -194,7 +196,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
           <AnimatePresence>
             {isServerMode && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                <div className="pt-4 border-t mt-4">
+                <div className="pt-4 border-t">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Select Server Loader</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {availableLoaders.map((loader) => (
@@ -216,6 +218,20 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* CORS Proxy Toggle */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-md transition-colors ${useCorsProxy ? "bg-purple-500/20 text-purple-500" : "bg-muted text-muted-foreground"}`}>
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Use CORS Proxy</h3>
+                <p className="text-xs text-muted-foreground">Fixes download errors for external files</p>
+              </div>
+            </div>
+            <Switch id="cors-proxy" checked={useCorsProxy} onCheckedChange={setUseCorsProxy} />
+          </div>
         </div>
 
         {/* Action Card */}
@@ -233,14 +249,11 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
             </div>
           </div>
           <Button
-            onClick={() =>
-              onStartConversion(
-                { ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) },
-                isServerMode,
-                selectedLoader
-              )
-            }
-            size="lg" disabled={selectedCount === 0} className="w-full gap-2 shadow-lg shadow-primary/20">
+            onClick={() => onStartConversion({ ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) }, isServerMode, selectedLoader, useCorsProxy)}
+            size="lg"
+            disabled={selectedCount === 0}
+            className="w-full gap-2 shadow-lg shadow-primary/20"
+          >
             {isServerMode ? "Generate Server Pack" : "Convert to ZIP"}
             <ArrowRight className="w-4 h-4" />
           </Button>

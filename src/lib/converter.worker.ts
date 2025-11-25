@@ -19,7 +19,7 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
       ctx.postMessage({ type: "MANIFEST_READ", manifest } satisfies WorkerResponse);
     } else if (type === "CONVERT") {
       isPaused = false;
-      const data = event.data as { file: File; manifest: ModrinthManifest; options: { serverMode: boolean; selectedLoader: string } };
+      const data = event.data as { file: File; manifest: ModrinthManifest; options: { serverMode: boolean; selectedLoader: string; useCorsProxy: boolean } };
       await convert(data.file, data.manifest, data.options);
     } else if (type === "PAUSE") {
       isPaused = true;
@@ -72,7 +72,7 @@ async function readManifest(file: File): Promise<ModrinthManifest> {
   }
 }
 
-async function convert(file: File, manifest: ModrinthManifest, options: { serverMode: boolean; selectedLoader: string }) {
+async function convert(file: File, manifest: ModrinthManifest, options: { serverMode: boolean; selectedLoader: string; useCorsProxy: boolean }) {
   const cache = await caches.open(CACHE_NAME);
 
   const newZip = new JSZip();
@@ -109,11 +109,15 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
       await checkPauseState();
 
       const fileName = modFile.path.split("/").pop() || "unknown.jar";
-      const downloadUrl = modFile.downloads[0];
+      let downloadUrl = modFile.downloads[0];
 
       if (!downloadUrl) {
         completed++;
         return;
+      }
+
+      if (options.useCorsProxy) {
+        downloadUrl = `https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`;
       }
 
       try {
@@ -123,8 +127,8 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
         const remainingFiles = totalFiles - completed;
         const etaSeconds = filesPerSecond > 0 ? remainingFiles / filesPerSecond : 0;
 
-        // Cek cache dulu sebelum post progress download
-        const cachedResponse = await cache.match(downloadUrl);
+        const originalUrl = modFile.downloads[0];
+        const cachedResponse = await cache.match(originalUrl);
         const isCached = !!cachedResponse;
 
         postProgress(isCached ? `Reading cache: ${fileName}...` : `Downloading ${fileName}...`, 10 + (completed / totalFiles) * 80, etaSeconds);
@@ -137,7 +141,7 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
           const response = await fetch(downloadUrl);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-          cache.put(downloadUrl, response.clone());
+          cache.put(originalUrl, response.clone());
           fileBlob = await response.blob();
         }
 
