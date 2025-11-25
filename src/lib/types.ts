@@ -53,6 +53,16 @@ export interface ConversionOptions {
   injectedFiles: File[];
 }
 
+export interface ConversionHistoryItem {
+  id: string;
+  name: string;
+  version: string;
+  date: number;
+  mode: "server" | "client";
+  loader: string;
+  fileName: string;
+}
+
 export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions } | { type: "PAUSE" } | { type: "RESUME" };
 
 export type WorkerResponse =

@@ -4,8 +4,10 @@ import Dropzone from "./Dropzone";
 import ModpackFinder from "./ModpackFinder";
 import PackDetails from "./PackDetails";
 import CacheManager from "./CacheManager";
+import HistoryPanel from "./HistoryPanel";
 import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
+import { addToHistory } from "@/lib/history";
 import type { ModrinthManifest, ServerScriptOptions } from "@/lib/types";
 import { Loader2, Terminal, CheckCircle2, Download, RefreshCcw, AlertCircle, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,8 @@ export default function ConverterWrapper() {
   const [error, setError] = useState<string | null>(null);
   const [isDone, setIsDone] = useState(false);
   const [rawFile, setRawFile] = useState<File | null>(null);
+
+  const [historyUpdateTrigger, setHistoryUpdateTrigger] = useState(0);
 
   useEffect(() => {
     if (isDone && "vibrate" in navigator) {
@@ -90,6 +94,16 @@ export default function ConverterWrapper() {
         },
         { serverMode: isServerMode, selectedLoader, useCorsProxy, scriptOptions, injectedFiles }
       );
+
+      addToHistory({
+        name: targetManifest.name,
+        version: targetManifest.versionId,
+        mode: isServerMode ? "server" : "client",
+        loader: selectedLoader,
+        fileName: `${targetManifest.name}-${targetManifest.versionId}.zip`,
+      });
+      setHistoryUpdateTrigger((prev) => prev + 1);
+
       setIsDone(true);
     } catch (err) {
       console.error(err);
@@ -205,12 +219,10 @@ export default function ConverterWrapper() {
             <CheckCircle2 className="w-12 h-12" />
           </motion.div>
         </div>
-
         <div className="space-y-2">
           <h3 className="text-2xl font-bold text-foreground">Conversion Complete!</h3>
           <p className="text-muted-foreground">Your download should have started automatically.</p>
         </div>
-
         <div className="flex gap-3 justify-center pt-4">
           <Button variant="outline" onClick={handleReset} className="gap-2">
             <RefreshCcw className="w-4 h-4" />
@@ -218,6 +230,7 @@ export default function ConverterWrapper() {
           </Button>
         </div>
         <CacheManager />
+        <HistoryPanel refreshTrigger={historyUpdateTrigger} />
       </div>
     );
   }
@@ -232,6 +245,7 @@ export default function ConverterWrapper() {
         <Dropzone onFileSelect={handleFileSelect} onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
         <ModpackFinder onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
         <CacheManager />
+        <HistoryPanel refreshTrigger={historyUpdateTrigger} /> 
         {error && (
           <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 text-sm font-medium border border-destructive/20 animate-in shake">
             <AlertCircle className="w-5 h-5 shrink-0" />
