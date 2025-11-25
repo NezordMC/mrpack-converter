@@ -6,7 +6,7 @@ import PackDetails from "./PackDetails";
 import CacheManager from "./CacheManager";
 import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
-import type { ModrinthManifest } from "@/lib/types";
+import type { ModrinthManifest, ServerScriptOptions } from "@/lib/types";
 import { Loader2, Terminal, CheckCircle2, Download, RefreshCcw, AlertCircle, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -61,7 +61,13 @@ export default function ConverterWrapper() {
     }
   };
 
-  const handleStartConversion = async (manifestOverride?: ModrinthManifest, isServerMode: boolean = false, selectedLoader: string = "server.jar", useCorsProxy: boolean = false) => {
+  const handleStartConversion = async (
+    manifestOverride?: ModrinthManifest,
+    isServerMode: boolean = false,
+    selectedLoader: string = "server.jar",
+    useCorsProxy: boolean = false,
+    scriptOptions?: ServerScriptOptions
+  ) => {
     const targetManifest = manifestOverride || manifest;
     if (!targetManifest || !rawFile) return;
 
@@ -81,7 +87,7 @@ export default function ConverterWrapper() {
           setProgress(prog);
           setEta(estimatedTime);
         },
-        { serverMode: isServerMode, selectedLoader, useCorsProxy } 
+        { serverMode: isServerMode, selectedLoader, useCorsProxy, scriptOptions }
       );
       setIsDone(true);
     } catch (err) {

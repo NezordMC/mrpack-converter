@@ -38,10 +38,18 @@ export type ModrinthManifest = z.infer<typeof ModrinthManifestSchema>;
 
 export type ConvertStatus = "idle" | "reading" | "downloading" | "zipping" | "paused" | "done" | "error";
 
+export interface ServerScriptOptions {
+  minRam: number;
+  maxRam: number;
+  javaFlags: string;
+  serverJarName: string;
+}
+
 export interface ConversionOptions {
   serverMode: boolean;
   selectedLoader: string;
   useCorsProxy: boolean;
+  scriptOptions?: ServerScriptOptions;
 }
 
 export type WorkerMessage = { type: "READ_MANIFEST"; file: File } | { type: "CONVERT"; file: File; manifest: ModrinthManifest; options: ConversionOptions } | { type: "PAUSE" } | { type: "RESUME" };

@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import type { ModrinthManifest, ModrinthFile } from "@/lib/types";
+import type { ModrinthManifest, ModrinthFile, ServerScriptOptions } from "@/lib/types";
+import ServerScriptConfig from "./ServerScriptConfig";
 
 interface PackDetailsProps {
   manifest: ModrinthManifest;
-  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string, useCorsProxy: boolean) => void;
+  onStartConversion: (filteredManifest: ModrinthManifest, isServerMode: boolean, selectedLoader: string, useCorsProxy: boolean, scriptOptions?: ServerScriptOptions) => void;
   onCancel: () => void;
 }
 
@@ -99,6 +100,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
   const [useCorsProxy, setUseCorsProxy] = useState(false);
   const [filterMode, setFilterMode] = useState<"all" | "selected" | "excluded" | "client-only">("all");
   const [isFileListOpen, setIsFileListOpen] = useState(true);
+  const [scriptOptions, setScriptOptions] = useState<ServerScriptOptions | undefined>(undefined);
 
   const availableLoaders = [
     manifest.dependencies["fabric-loader"] ? "fabric-server-launch.jar" : null,
@@ -224,7 +226,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
               </div>
               <div>
                 <h3 className="font-semibold">Server Pack Mode</h3>
-                <p className="text-xs text-muted-foreground">Optimize for server deployment (Auto-exclude client mods)</p>
+                <p className="text-xs text-muted-foreground">Optimize for server deployment</p>
               </div>
             </div>
             <Switch id="server-mode" checked={isServerMode} onCheckedChange={handleServerModeToggle} />
@@ -232,7 +234,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
 
           <AnimatePresence>
             {isServerMode && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden space-y-4">
                 <div className="pt-4 border-t">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Select Server Loader</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -252,6 +254,9 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
                     ))}
                   </div>
                 </div>
+
+                {/* Insert Config Component Here */}
+                <ServerScriptConfig defaultJarName={selectedLoader} onChange={setScriptOptions} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -284,7 +289,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
             </div>
           </div>
           <Button
-            onClick={() => onStartConversion({ ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) }, isServerMode, selectedLoader, useCorsProxy)}
+            onClick={() => onStartConversion({ ...manifest, files: manifest.files.filter((f) => selectedPaths.has(f.path)) }, isServerMode, selectedLoader, useCorsProxy, scriptOptions)}
             size="lg"
             disabled={selectedCount === 0}
             className="w-full gap-2 shadow-lg shadow-primary/20"
@@ -295,6 +300,7 @@ export default function PackDetails({ manifest, onStartConversion, onCancel }: P
         </div>
       </div>
 
+      {/* File List Section */}
       <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
         <div className="p-4 border-b flex flex-col sm:flex-row gap-4 justify-between items-center bg-muted/5">
           <div className="flex items-center gap-2 w-full sm:w-auto">
