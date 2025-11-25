@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Dropzone from "./Dropzone";
 import ModpackFinder from "./ModpackFinder";
 import PackDetails from "./PackDetails";
+import CacheManager from "./CacheManager";
 import { Progress } from "@/components/ui/progress";
 import { ConverterEngine } from "@/lib/converter-engine";
 import type { ModrinthManifest } from "@/lib/types";
@@ -209,6 +210,9 @@ export default function ConverterWrapper() {
             Convert Another
           </Button>
         </div>
+
+        {/* Tampilkan cache manager setelah konversi selesai untuk melihat penggunaan storage */}
+        <CacheManager />
       </div>
     );
   }
@@ -222,6 +226,9 @@ export default function ConverterWrapper() {
       <div className="bg-card/50 rounded-xl p-6 md:p-8 space-y-4">
         <Dropzone onFileSelect={handleFileSelect} onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
         <ModpackFinder onUrlSubmit={handleUrlSubmit} isProcessing={isLoading} />
+
+        <CacheManager />
+
         {error && (
           <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-3 text-sm font-medium border border-destructive/20 animate-in shake">
             <AlertCircle className="w-5 h-5 shrink-0" />

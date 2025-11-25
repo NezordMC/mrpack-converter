@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import pLimit from "p-limit";
 import { ModrinthManifestSchema } from "./types";
+import { CACHE_NAME } from "./constants";
 import type { ModrinthManifest, ModrinthFile, WorkerMessage, WorkerResponse } from "./types";
 
 const ctx: Worker = self as any;
@@ -72,7 +73,6 @@ async function readManifest(file: File): Promise<ModrinthManifest> {
 }
 
 async function convert(file: File, manifest: ModrinthManifest, options: { serverMode: boolean; selectedLoader: string }) {
-  const CACHE_NAME = "mrpack-mods-cache-v1";
   const cache = await caches.open(CACHE_NAME);
 
   const newZip = new JSZip();
@@ -123,10 +123,13 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
         const remainingFiles = totalFiles - completed;
         const etaSeconds = filesPerSecond > 0 ? remainingFiles / filesPerSecond : 0;
 
-        postProgress(`Downloading ${fileName}...`, 10 + (completed / totalFiles) * 80, etaSeconds);
+        // Cek cache dulu sebelum post progress download
+        const cachedResponse = await cache.match(downloadUrl);
+        const isCached = !!cachedResponse;
+
+        postProgress(isCached ? `Reading cache: ${fileName}...` : `Downloading ${fileName}...`, 10 + (completed / totalFiles) * 80, etaSeconds);
 
         let fileBlob: Blob;
-        const cachedResponse = await cache.match(downloadUrl);
 
         if (cachedResponse) {
           fileBlob = await cachedResponse.blob();
