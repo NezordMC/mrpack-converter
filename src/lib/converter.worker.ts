@@ -149,19 +149,36 @@ async function convert(file: File, manifest: ModrinthManifest, options: { server
 
   await Promise.all(downloadPromises);
 
-  postProgress("Compressing final ZIP...", 95, 0);
-  const content = await newZip.generateAsync({ type: "blob" });
-
-  postProgress("Done! Preparing download...", 100, 0);
+  postProgress("Compressing and Streaming ZIP...", 95, 0);
 
   const suffix = options.serverMode ? "SERVER-PACK" : "FULL";
   const finalFileName = `${manifest.name}-${manifest.versionId}-${suffix}.zip`;
 
-  ctx.postMessage({
-    type: "DONE",
-    blob: content,
-    fileName: finalFileName,
-  } satisfies WorkerResponse);
+  const zipStream = new ReadableStream({
+    start(controller) {
+      newZip
+        .generateInternalStream({ type: "uint8array" })
+        .on("data", (data) => {
+          controller.enqueue(data);
+        })
+        .on("error", (err) => {
+          controller.error(err);
+        })
+        .on("end", () => {
+          controller.close();
+        })
+        .resume();
+    },
+  });
+
+  ctx.postMessage(
+    {
+      type: "DONE",
+      stream: zipStream,
+      fileName: finalFileName,
+    } satisfies WorkerResponse,
+    [zipStream]
+  );
 }
 
 function postProgress(log: string, progress: number, eta: number) {

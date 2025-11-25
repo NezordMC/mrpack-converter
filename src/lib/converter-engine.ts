@@ -1,4 +1,3 @@
-import saveAs from "file-saver";
 import type { ModrinthManifest, ConversionOptions, WorkerResponse } from "./types";
 
 type ProgressCallback = (log: string, progress: number, eta: number) => void;
@@ -43,7 +42,7 @@ export class ConverterEngine {
       this.activeWorker = new Worker(new URL("./converter.worker.ts", import.meta.url), { type: "module" });
       const worker = this.activeWorker;
 
-      worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      worker.onmessage = async (event: MessageEvent<WorkerResponse>) => {
         const data = event.data;
 
         switch (data.type) {
@@ -51,10 +50,20 @@ export class ConverterEngine {
             onProgress(data.log, data.progress, data.eta);
             break;
           case "DONE":
-            saveAs(data.blob, data.fileName);
-            worker.terminate();
-            this.activeWorker = null;
-            resolve();
+            try {
+              const streamSaver = (await import("streamsaver")).default;
+
+              const fileStream = streamSaver.createWriteStream(data.fileName);
+              if (data.stream.pipeTo) {
+                await data.stream.pipeTo(fileStream);
+              }
+              resolve();
+            } catch (err) {
+              reject(err);
+            } finally {
+              worker.terminate();
+              this.activeWorker = null;
+            }
             break;
           case "ERROR":
             reject(new Error(data.error));
